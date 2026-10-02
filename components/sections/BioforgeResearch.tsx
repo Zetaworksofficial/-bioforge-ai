@@ -6,11 +6,13 @@ import { SectionLabel } from "@/components/ui/SectionLabel";
 import { DisplayText } from "@/components/ui/DisplayText";
 import { MetaText } from "@/components/ui/MetaText";
 
-// 100% deterministic LCG PRNG for hydration safety
+// 100% deterministic PRNG for hydration safety
+// Uses a MurmurHash3-style integer mixer to guarantee uncorrelated float outputs from sequential seeds
 const prng = (seed: number) => {
-  let state = (seed ^ 0x5deece66d) & 0x7fffffff;
-  state = (state * 48271) % 2147483647;
-  return state / 2147483647;
+  let h = seed ^ 0x5deece66d;
+  h = Math.imul(h ^ (h >>> 16), 0x85ebca6b);
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 };
 
 interface SpecimenNode {
@@ -63,32 +65,34 @@ export default function BioforgeResearch() {
     setMousePos({ x: 0, y: 0 });
   };
 
-  // Generate deterministic biological structure
+  // Generate deterministic biological structure using fixed coordinate system
   const nodes = useMemo(() => {
     const arr: SpecimenNode[] = [];
-    const numNodes = 120;
+    const numNodes = 150;
     
+    // We will use a 1200x800 coordinate system
     for (let i = 0; i < numNodes; i++) {
-      const x = Number((prng(i * 10) * 100).toFixed(1)); // percentage 0-100
-      const y = Number((prng(i * 20) * 100).toFixed(1)); // percentage 0-100
+      const x = Number((prng(i * 10) * 1200).toFixed(1)); 
+      const y = Number((prng(i * 20) * 800).toFixed(1)); 
       const layer = Math.floor(prng(i * 30) * 3); // 0, 1, or 2
-      const r = layer === 2 ? 3 : layer === 1 ? 2 : 1;
+      const r = layer === 2 ? 6 : layer === 1 ? 4 : 2; // Much more visible radius
       
       arr.push({ id: i, x, y, r, layer, connections: [] });
     }
     
-    // Connect nodes within the same or adjacent layers if close enough
+    // Connect nodes
     for (let i = 0; i < numNodes; i++) {
       const n1 = arr[i];
       for (let j = i + 1; j < numNodes; j++) {
         const n2 = arr[j];
         const dist = Math.hypot(n1.x - n2.x, n1.y - n2.y);
         
-        if (dist < 15 && Math.abs(n1.layer - n2.layer) <= 1 && prng(i * j) > 0.6) {
+        // Within 150px
+        if (dist < 150 && Math.abs(n1.layer - n2.layer) <= 1 && prng(i * j) > 0.4) {
           n1.connections.push(j);
         }
       }
-      n1.connections = n1.connections.slice(0, 3);
+      n1.connections = n1.connections.slice(0, 4);
     }
     return arr;
   }, []);
@@ -98,13 +102,13 @@ export default function BioforgeResearch() {
   const parallaxY = prefersReducedMotion ? 0 : (isHovered ? mousePos.y : 0);
   
   const layerMultipliers = [
-    { x: -5, y: -5 },   // Background moves opposite
-    { x: 10, y: 10 },   // Midground moves slightly with cursor
-    { x: 25, y: 25 },   // Foreground moves most with cursor
+    { x: -10, y: -10 },   // Background moves opposite
+    { x: 20, y: 20 },   // Midground moves slightly with cursor
+    { x: 50, y: 50 },   // Foreground moves most with cursor
   ];
 
   return (
-    <section className="relative w-full bg-background py-16 md:py-32 overflow-hidden border-t border-soft-graphite/50">
+    <section id="research" className="relative w-full bg-background py-16 md:py-32 overflow-hidden border-t border-soft-graphite/50">
       <Container>
         <div className="mb-12 md:mb-20">
           <SectionLabel className="mb-6 text-muted-white">RESEARCH / BIOLOGICAL ARTIFACTS</SectionLabel>
@@ -130,7 +134,11 @@ export default function BioforgeResearch() {
 
           {/* Biological Visualization Layers */}
           <div className="absolute inset-[-10%] w-[120%] h-[120%] pointer-events-none">
-            <svg width="100%" height="100%" className="overflow-visible pointer-events-none">
+            <svg 
+              viewBox="0 0 1200 800" 
+              className="w-full h-full overflow-visible pointer-events-none"
+              preserveAspectRatio="xMidYMid slice"
+            >
               
               {/* Draw Connections */}
               {nodes.map(n => 
@@ -150,11 +158,11 @@ export default function BioforgeResearch() {
                       }}
                     >
                       <line
-                        x1={`${n.x}%`} y1={`${n.y}%`}
-                        x2={`${target.x}%`} y2={`${target.y}%`}
+                        x1={n.x} y1={n.y}
+                        x2={target.x} y2={target.y}
                         stroke={avgLayer === 2 ? "var(--color-bio-cyan)" : "var(--color-muted-white)"}
-                        strokeWidth={avgLayer === 2 ? 0.75 : 0.25}
-                        style={{ opacity: avgLayer === 2 ? 0.4 : 0.1 }}
+                        strokeWidth={avgLayer === 2 ? 1.5 : 0.5}
+                        style={{ opacity: avgLayer === 2 ? 0.5 : 0.2 }}
                       />
                     </g>
                   );
@@ -166,7 +174,7 @@ export default function BioforgeResearch() {
                 const mx = layerMultipliers[n.layer].x * parallaxX;
                 const my = layerMultipliers[n.layer].y * parallaxY;
                 const fill = n.layer === 2 ? "var(--color-bio-cyan)" : "var(--color-muted-white)";
-                const opacity = n.layer === 2 ? 0.8 : (n.layer === 1 ? 0.4 : 0.15);
+                const opacity = n.layer === 2 ? 0.9 : (n.layer === 1 ? 0.6 : 0.3);
 
                 return (
                   <g
@@ -176,7 +184,11 @@ export default function BioforgeResearch() {
                       transition: isHovered ? 'transform 0.1s ease-out' : 'transform 1s cubic-bezier(0.16, 1, 0.3, 1)'
                     }}
                   >
-                    <circle cx={`${n.x}%`} cy={`${n.y}%`} r={n.r} fill={fill} style={{ opacity }} />
+                    <circle cx={n.x} cy={n.y} r={n.r} fill={fill} style={{ opacity }} />
+                    {/* Add a subtle glow ring to the foreground nodes */}
+                    {n.layer === 2 && (
+                       <circle cx={n.x} cy={n.y} r={n.r * 3} fill="none" stroke="var(--color-bio-cyan)" strokeWidth="1" opacity="0.3" />
+                    )}
                   </g>
                 );
               })}

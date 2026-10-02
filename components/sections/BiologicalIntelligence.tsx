@@ -33,7 +33,7 @@ export default function BiologicalIntelligence() {
 
   return (
     <section 
-      id="research"
+      id="intelligence"
       ref={sectionRef}
       className="relative w-full bg-graphite py-12 md:py-16 overflow-hidden border-t border-soft-graphite/50 flex items-center"
     >
