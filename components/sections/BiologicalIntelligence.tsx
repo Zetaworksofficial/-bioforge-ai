@@ -35,30 +35,28 @@ export default function BiologicalIntelligence() {
     <section 
       id="research"
       ref={sectionRef}
-      className="relative w-full bg-graphite py-16 md:py-24 overflow-hidden border-t border-soft-graphite/50"
+      className="relative w-full bg-graphite py-12 md:py-16 overflow-hidden border-t border-soft-graphite/50 flex items-center"
     >
       <Container>
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-0 items-center">
           
-          {/* Content Left / Top */}
-          <div className="lg:col-span-5 relative z-20">
+          {/* Content Left */}
+          <div className="lg:col-span-5 relative z-20 py-12 lg:pr-12">
+            <SectionLabel className="mb-6 text-muted-white">BIOLOGICAL INTELLIGENCE</SectionLabel>
             
-            <h2 className="font-sans font-bold text-4xl md:text-5xl lg:text-[4rem] tracking-tight text-off-white leading-[1.05] mb-8">
-              We build intelligence <br className="hidden lg:block" />
+            <h2 className="font-sans font-bold text-[clamp(2.5rem,5vw,4.5rem)] tracking-tight text-off-white leading-[1.05] mb-8">
+              We build <br />
+              intelligence <br />
               <span className="text-muted-white">for biology.</span>
             </h2>
             
-            <p className="font-sans text-lg md:text-xl text-muted-white font-medium max-w-lg leading-relaxed">
+            <p className="font-sans text-lg md:text-xl text-muted-white font-medium max-w-md leading-relaxed">
               BioForge connects biological knowledge, relationships, evidence, and reasoning into systems designed to explore the living world.
             </p>
           </div>
           
-          {/* Visual System Right / Bottom */}
-          <div className="lg:col-span-7 relative z-10 w-full">
-            {/* 
-              The pipeline visual extends toward the right, establishing an asymmetrical flow 
-              that resolves the "complex information systems" thesis from the previous section.
-            */}
+          {/* Visual System Right */}
+          <div className="lg:col-span-7 relative z-10 w-full flex justify-center lg:justify-end">
             <IntelligencePipeline progress={progress} isVisible={progress > 0} />
           </div>
           
